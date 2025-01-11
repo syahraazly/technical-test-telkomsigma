@@ -122,4 +122,25 @@ class EmploymentController extends Controller
         return response()->json(['message' => 'Data deleted successfully']);
     }
 
+    // GET /employments/count-by-category
+    public function countByCategory()
+    {
+        $counts = Employment::select('employment_status', DB::raw('count(*) as total'))
+        ->groupBy('employment_status')
+        ->get();
+
+        return response()->json($counts);
+    }
+
+    // GET /employments/aggregation-by-date
+    public function aggregationByDate()
+    {
+        $aggregation = Employment::select(DB::raw('DATE(join_date) as date'), DB::raw('count(*) as total'))
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get();
+
+        return response()->json($aggregation);
+    }
+
 }
