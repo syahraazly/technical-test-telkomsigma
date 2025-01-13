@@ -1,14 +1,17 @@
 <template>
   <img alt="Vue logo" src="./assets/logo.png">
-  <ChartComponent/>
+  <ManageComponent />
+  <ChartComponent />
 </template>
 
 <script>
+import ManageComponent from './components/ManageComponent.vue';
 import ChartComponent from './components/ChartComponent.vue';
 
 export default {
   name: 'App',
   components: {
+    ManageComponent,
     ChartComponent
   }
 }
