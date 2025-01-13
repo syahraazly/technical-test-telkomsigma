@@ -118,6 +118,23 @@ import { createToast } from "mosha-vue-toastify";
     <!-- table -->
     <div class=" bg-white shadow-md rounded-lg p-6">
       <h2 class="text-xl font-semibold text-gray-700 mb-4">Employment List</h2>
+
+      <!-- filtering -->
+      <div class="flex mb-4">
+        <!-- filter by search (input text) -->
+        <input type="text" v-model="search" placeholder="Search..." class="border border-gray-300 p-2 rounded mr-4" />
+
+        <!-- filter by employment status (select category) -->
+        <select v-model="employmentStatus" class="border border-gray-300 p-2 rounded ml-4">
+          <option value="">All Status</option>
+          <option value="contract">Contract</option>
+          <option value="probation">Probation</option>
+          <option value="permanent">Permanent</option>
+        </select>
+        
+        <button @click="applyFilters" class="bg-blue-500 text-white px-4 py-2 ml-8 rounded hover:bg-blue-600">Search</button>
+      </div>
+  
       <table class="min-w-full bg-white border border-gray-200 rounded-lg">
         <thead>
           <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
@@ -125,6 +142,8 @@ import { createToast } from "mosha-vue-toastify";
             <th class="py-3 px-6 text-left">Name</th>
             <th class="py-3 px-6 text-left">Gender</th>
             <th class="py-3 px-6 text-left">Role</th>
+            <th class="py-3 px-6 text-left">Job Grade</th>
+            <th class="py-3 px-6 text-left">Employment Status</th>
             <th class="py-3 px-6 text-left">Manager</th>
             <th class="py-3 px-6 text-left">Join Date</th>
             <th class="py-3 px-6 text-left">End Date</th>
@@ -138,6 +157,8 @@ import { createToast } from "mosha-vue-toastify";
             <td class="py-3 px-6">{{ item.name }}</td>
             <td class="py-3 px-6">{{ item.gender }}</td>
             <td class="py-3 px-6">{{ item.role }}</td>
+            <td class="py-3 px-6">{{ item.job_grade }}</td>
+            <td class="py-3 px-6">{{ item.employment_status }}</td>
             <td class="py-3 px-6">{{ item.manager }}</td>
             <td class="py-3 px-6">{{ item.join_date }}</td>
             <td class="py-3 px-6">{{ item.end_date }}</td>
@@ -203,7 +224,9 @@ export default {
       action: '',
       currentPage: 1,
       itemsPerPage: 10,
-      loading: false
+      search: '',
+      employmentStatus: '',
+      filteredData: [],
     }
   },
   computed: {
@@ -218,24 +241,15 @@ export default {
   },
   methods: {
     // get data dari API
-    async getData() {
-      try {
-        const response = await axios.get("/employments");
-        console.log("resp get", response.data);
-        return response.data; 
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        this.createAlert("Failed to fetch data", "error");
-        return [];
-      }
-    },
-
-    // memuat dan menyimpan data ke list_employment
     async fetchData() {
       try {
-        this.list_employment = await this.getData(); 
+        const resp = await axios.get("/employments");
+        this.list_employment = resp.data;
+        this.filteredData = [...this.list_employment]; 
       } catch (error) {
         console.error("Error in fetchData:", error);
+        this.createAlert("Failed to fetch data", "error");
+        return [];
       }
     },
 
@@ -243,6 +257,8 @@ export default {
     changePage(page) {
       if (page >= 1 && page <= this.totalPages) {
         this.currentPage = page;
+      } else {
+        this.currentPage = 1; // reset ke halaman pertama
       }
     },
 
@@ -306,8 +322,6 @@ export default {
         end_date: this.end_date,
       };
 
-      this.loading = true;
-
       try {
         if (this.action === "insert") {
           const resp = await axios.post("/employments", form);
@@ -330,8 +344,6 @@ export default {
     // hapus data
     async deleteData(id) {
       if (confirm("Are you sure delete this data?")) {
-        this.loading = true;
-
         try {
           const resp = await axios.delete(`/employments/${id}`);
           console.log("resp delete", resp);
@@ -341,6 +353,29 @@ export default {
           console.error("Error in deleteData:", error);
           this.createAlert("Failed to delete data", "error");
         }
+      }
+    },
+
+    // filter dan pencarian
+    async applyFilters() {
+      if (!this.search && !this.employmentStatus) {
+        await this.fetchData(); // reset ke semua data jika tidak ada filter
+        return;
+      }
+
+      try {
+        const response = await axios.get('/employments', {
+          params: {
+            search: this.search || undefined,
+            employment_status: this.employmentStatus || undefined,
+          },
+        });
+
+        this.list_employment = response.data; // update data asli
+        this.filteredData = [...this.list_employment]; // perbarui data tabel
+      } catch (error) {
+        console.error('Error fetching filtered data:', error);
+        this.createAlert('Failed to fetch filtered data', 'error');
       }
     },
 
