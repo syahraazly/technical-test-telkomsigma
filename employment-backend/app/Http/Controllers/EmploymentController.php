@@ -13,17 +13,20 @@ class EmploymentController extends Controller
     {
         $query = Employment::query();
 
-        // pencarian untuk semua kolom
+        // hanya tampilkan data yang belum dihapus
+        $query->where('is_deleted', false);
+
+        // pencarian dan filter lainnya
         if ($request->has('search') && $request->search !== null) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%$search%")
-                ->orWhere('gender', 'like', "%$search%")
-                ->orWhere('role', 'like', "%$search%")
-                ->orWhere('job_grade', 'like', "%$search%")
-                ->orWhere('employment_no', 'like', "%$search%")
-                ->orWhere('employment_status', 'like', "%$search%")
-                ->orWhere('manager', 'like', "%$search%");
+                    ->orWhere('gender', 'like', "%$search%")
+                    ->orWhere('role', 'like', "%$search%")
+                    ->orWhere('job_grade', 'like', "%$search%")
+                    ->orWhere('employment_no', 'like', "%$search%")
+                    ->orWhere('employment_status', 'like', "%$search%")
+                    ->orWhere('manager', 'like', "%$search%");
             });
         }
 
@@ -93,16 +96,7 @@ class EmploymentController extends Controller
             'end_date' => 'nullable|date',
         ]);
 
-        // pengecekan khusus untuk `employment_no`, hanya diizinkan diubah jika baru
-        if ($request->has('employment_no') && $request->employment_no !== Employment::findOrFail($id)->employment_no) {
-            // menghapus `employment_no` dari data input, karena tidak boleh diubah
-            unset($validated['employment_no']);
-        }
-
-        // menemukan data employment berdasarkan ID
-        $employment = Employment::findOrFail($id);
-
-        // update data employment kecuali `employment_no`
+        // update data lokal
         $employment->update($validated);
 
         return response()->json($employment, 200);
@@ -117,30 +111,75 @@ class EmploymentController extends Controller
             return response()->json(['message' => 'Data not found'], 404);
         }
 
-        $employment->delete();
+        $updated = $employment->update(['is_deleted' => true]);
+
+        if (!$updated) {
+            return response()->json(['message' => 'Failed to update data'], 500);
+        }
 
         return response()->json(['message' => 'Data deleted successfully']);
     }
 
     // GET /employments/count-by-category
-    public function countByCategory()
+    public function countByCategory(Request $request)
     {
-        $counts = Employment::select('employment_status', DB::raw('count(*) as total'))
-        ->groupBy('employment_status')
-        ->get();
+        $query = Employment::select('employment_status', DB::raw('count(*) as total'))
+        ->groupBy('employment_status');
+
+        // filter berdasarkan tanggal 
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('join_date', [$request->start_date, $request->end_date]);
+        }
+
+        $counts = $query->get();
 
         return response()->json($counts);
     }
 
     // GET /employments/aggregation-by-date
-    public function aggregationByDate()
+    public function aggregationByDate(Request $request)
     {
-        $aggregation = Employment::select(DB::raw('DATE(join_date) as date'), DB::raw('count(*) as total'))
+        $query = Employment::select(DB::raw('DATE(join_date) as date'), DB::raw('count(*) as total'))
             ->groupBy('date')
-            ->orderBy('date', 'asc')
-            ->get();
+            ->orderBy('date', 'asc');
+
+        // filter berdasarkan tanggal 
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('join_date', [$request->start_date, $request->end_date]);
+        }
+
+        $aggregation = $query->get();
 
         return response()->json($aggregation);
+    }
+
+    // GET /employments/charts-data
+    public function getChartsData(Request $request)
+    {
+        // Query untuk Pie Chart (count by category)
+        $categoryQuery = Employment::select('employment_status', DB::raw('count(*) as total'))
+            ->groupBy('employment_status');
+
+        // Query untuk Column Chart (aggregation by date)
+        $dateQuery = Employment::select(DB::raw('DATE(join_date) as date'), DB::raw('count(*) as total'))
+            ->groupBy('date')
+            ->orderBy('date', 'asc');
+
+        // Tambahkan filter tanggal jika ada
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $categoryQuery->whereBetween('join_date', [$request->start_date, $request->end_date]);
+            $dateQuery->whereBetween('join_date', [$request->start_date, $request->end_date]);
+        }
+
+        // Eksekusi query
+        $categoryData = $categoryQuery->get();
+        $dateData = $dateQuery->get();
+
+        // Return data dalam satu respons
+        return response()->json([
+            'categoryData' => $categoryData,
+            'dateData' => $dateData,
+        ]);
     }
 
 }

@@ -22,6 +22,9 @@ return new class extends Migration
             $table->string('manager');
             $table->date('join_date');
             $table->date('end_date')->nullable();
+            $table->boolean('is_custom')->default(false); // true jika data diedit/dibuat secara manual
+            $table->boolean('is_deleted')->default(false); // ture jika dihapus secara manual
+            // $table->softDeletes();
             $table->timestamps();
         });
     }

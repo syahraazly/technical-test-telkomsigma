@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employment extends Model
 {
     use HasFactory;
+    // use SoftDeletes;
 
     // enum untuk employment_status
     const EMPLOYMENT_STATUS_CONTRACT = 'Contract';
@@ -23,6 +25,10 @@ class Employment extends Model
     const GENDER_MALE = 'Male';
     const GENDER_FEMALE = 'Female';
 
+    protected $table = 'employments';
+
+    // protected $dates = ['deleted_at'];
+
     protected $fillable = [
         'name',
         'gender',
@@ -32,7 +38,9 @@ class Employment extends Model
         'employment_status',
         'manager',
         'join_date',
-        'end_date'
+        'end_date',
+        'is_custom',
+        'is_deleted'
     ];
 
     // validasi enum

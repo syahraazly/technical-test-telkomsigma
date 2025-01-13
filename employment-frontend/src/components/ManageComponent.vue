@@ -274,7 +274,7 @@ export default {
       this.manager = "";
       this.join_date = "";
       this.end_date = "";
-      this.action = ""; 
+      this.action = "insert"; 
     },
 
     // tambah data
