@@ -4,9 +4,7 @@ import { createToast } from "mosha-vue-toastify";
 </script>
 
 <template>
-  <div class="container mx-auto p-6">
-    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Employment Data</h1>
-
+  <div class="mx-auto p-6 pl-12">
     <!-- form -->
     <div class="bg-white shadow-md rounded-lg p-6 mb-6">
       <h2 class="text-xl font-semibold text-gray-700 mb-4">{{ action === 'update' ? 'Edit Employment Data' : 'Add Employment Data' }}</h2>
