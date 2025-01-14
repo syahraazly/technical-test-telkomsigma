@@ -209,7 +209,7 @@ export default {
   data: function () {
     return {
       list_employment: [],
-      id: 0,
+      // id: 0,
       name: '',
       gender: '',
       role: '',
@@ -219,7 +219,7 @@ export default {
       manager: '',
       join_date: '',
       end_date: '',
-      action: '',
+      action: 'insert',
       currentPage: 1,
       itemsPerPage: 10,
       search: '',
@@ -277,7 +277,7 @@ export default {
 
     // tambah data
     addData() {
-      this.id = "";
+      // this.id = "";
       this.name = "";
       this.gender = "";
       this.role = "";
